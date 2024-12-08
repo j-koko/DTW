@@ -233,9 +233,9 @@ def mel_filter_bank(sample_rate, n_fft, n_mels=26):
 
     # Create triangular filters
     for m in range(1, n_mels + 1):
-        f_m_minus = bins[m - 1]  # Left
-        f_m = bins[m]  # Center
-        f_m_plus = bins[m + 1]  # Right
+        f_m_minus = bins[m - 1]
+        f_m = bins[m]
+        f_m_plus = bins[m + 1]
 
         for k in range(f_m_minus, f_m):
             filter_bank[m - 1, k] = (k - f_m_minus) / (f_m - f_m_minus)
