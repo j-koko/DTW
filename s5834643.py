@@ -184,7 +184,7 @@ def pre_emphasis(y, pre_emphasis_constant=0.97):
 
 
 def frame_signal(signal, frame_size, frame_step, sample_rate):
-    """Returns:numpy.ndarray: A 2D array where each row is a frame."""
+    """Creates frames and applies windowing (Hamming window)"""
     # Convert frame size and step from seconds to samples
     frame_length = int(frame_size * sample_rate)
     frame_step_samples = int(frame_step * sample_rate)
@@ -209,24 +209,15 @@ def frame_signal(signal, frame_size, frame_step, sample_rate):
 
 
 def compute_power_spectrum(frames, n_fft):
-    """Compute the power spectrum of each frame.
-    Parameters:
-        frames (numpy.ndarray): 2D array where each row is a frame.
-        n_fft (int): Number of FFT points.
-    Returns: numpy.ndarray: Power spectrum of each frame."""
-    fft_frames = np.abs(fft(frames, n=n_fft)) # Magnitude spectrum
-    power_spectrum = (1.0 / n_fft) * (fft_frames ** 2)  # Power spectrum
+    """Compute the power spectrum of each frame."""
+    fft_frames = np.abs(fft(frames, n=n_fft)) # Convert signal to the magnitude spectrum
+    power_spectrum = (1.0 / n_fft) * (fft_frames ** 2)  # Power spectrum and normalization
     return power_spectrum[:, :n_fft // 2 + 1]  # Keep only positive frequencies
 
 
 def mel_filter_bank(sample_rate, n_fft, n_mels=26):
-    """ Create Mel filter bank.
-    Parameters:
-        sample_rate (int): Sampling rate of the signal.
-        n_fft (int): Number of FFT points.
-        n_mels (int): Number of Mel filters (default 26).
-    Returns: numpy.ndarray: Filter bank matrix of the following shape (n_mels, n_fft//2 + 1). """
-    # Convert frequencies to Mel scale
+    """ Create Mel filter bank"""
+    # Convert frequencies (in Hz) to Mel scale
     def hz_to_mel(hz):
         return 2595 * np.log10(1 + hz / 700.0)
     def mel_to_hz(mel):
@@ -251,19 +242,18 @@ def mel_filter_bank(sample_rate, n_fft, n_mels=26):
         for k in range(f_m, f_m_plus):
             filter_bank[m - 1, k] = (f_m_plus - k) / (f_m_plus - f_m)
 
+    # The function return numpy array: filter bank matrix of the following shape (n_mels, n_fft//2 + 1)
+
     return filter_bank
 
 
 def apply_filter_bank(power_spectrum, filter_bank):
-    """ Apply the Mel filter bank to the power spectrum.
-    Returns:numpy.ndarray: Mel filter bank energies."""
+    """Apply the Mel filter bank to the power spectrum"""
     return np.dot(power_spectrum, filter_bank.T)
 
 
 def compute_mfccs(log_mel_energies, num_ceps=13):
-    """Compute MFCCs using DCT
-    Parameters: log_mel_energies (numpy array): Logarithm of Mel filter bank energies.
-                num_ceps: Number of cepstral coefficients to return (default 13)"""
+    """Compute MFCCs using DCT. Number of cepstral coefficients (num_ceps) to return is set by default to 13"""
     mfccs = dct(log_mel_energies, type=2, axis=1, norm='ortho')[:, :num_ceps] # discard high-order coefficients
     return mfccs
 
